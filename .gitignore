@@ -1,6 +1,7 @@
-*.pyc
+# Python
 __pycache__/
-env/
-.env
-*.zip
-*.tar.gz
+*.pyc
+
+# Arquivos de IDE/Editor
+.vscode/
+.idea/
