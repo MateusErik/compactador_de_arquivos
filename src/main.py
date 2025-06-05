@@ -11,12 +11,31 @@ from datetime import datetime
 console = Console()
 
 def compactar(pasta_entrada, arquivo_saida):
+    registros = []
+
     with zipfile.ZipFile(arquivo_saida, 'w') as zipf:
         for pasta_atual, _, arquivos in os.walk(pasta_entrada):
             for arquivo in arquivos:
                 caminho_completo = os.path.join(pasta_atual, arquivo)
-                zipf.write(caminho_completo, os.path.relpath(caminho_completo, pasta_entrada))
+                caminho_relativo = os.path.relpath(caminho_completo, pasta_entrada)
+
+                zipf.write(caminho_completo, caminho_relativo)
+
+                tamanho = os.path.getsize(caminho_completo)
+                modificado = datetime.fromtimestamp(os.path.getmtime(caminho_completo)).strftime('%Y-%m-%d %H:%M:%S')
+
+                registros.append({
+                    "arquivo": caminho_relativo,
+                    "tamanho (bytes)": tamanho,
+                    "modificado em": modificado
+                })
+
+    # Criar DataFrame e salvar como CSV
+    df = pd.DataFrame(registros)
+    df.to_csv("logs/relatorio_compactados.csv", index=False)
+
     console.print(f"[green]Compactação concluída: {arquivo_saida}[/green]")
+    console.print(f"[yellow]Relatório salvo em: logs/relatorio_compactados.csv[/yellow]")
 
 def descompactar(arquivo_zip, pasta_destino):
     with zipfile.ZipFile(arquivo_zip, 'r') as zipf:
