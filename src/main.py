@@ -38,9 +38,28 @@ def compactar(pasta_entrada, arquivo_saida):
     console.print(f"[yellow]Relatório salvo em: logs/relatorio_compactados.csv[/yellow]")
 
 def descompactar(arquivo_zip, pasta_destino):
+    registros = []
+
     with zipfile.ZipFile(arquivo_zip, 'r') as zipf:
         zipf.extractall(pasta_destino)
+        for nome_arquivo in zipf.namelist():
+            caminho_extraido = os.path.join(pasta_destino, nome_arquivo)
+            if os.path.isfile(caminho_extraido):
+                tamanho = os.path.getsize(caminho_extraido)
+                agora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                registros.append({
+                    "arquivo": nome_arquivo,
+                    "extraído para": caminho_extraido,
+                    "tamanho (bytes)": tamanho,
+                    "extraído em": agora
+                })
+
+    # Criar DataFrame e salvar como CSV
+    df = pd.DataFrame(registros)
+    df.to_csv("logs/relatorio_descompactados.csv", index=False)
+
     console.print(f"[cyan]Arquivos extraídos para: {pasta_destino}[/cyan]")
+    console.print(f"[yellow]Relatório salvo em: logs/relatorio_descompactados.csv[/yellow]")
 
 if __name__ == "__main__":
     console.print("[bold]Compactador de Arquivos[/bold]")
