@@ -7,30 +7,29 @@ import zipfile
 import pandas as pd
 from rich.console import Console
 from datetime import datetime
+from selecao_arquivos import selecionar_arquivos
 
 console = Console()
 
-def compactar(pasta_entrada, arquivo_saida):
+def compactar_varios(arquivos, arquivo_saida):
     registros = []
 
     with zipfile.ZipFile(arquivo_saida, 'w') as zipf:
-        for pasta_atual, _, arquivos in os.walk(pasta_entrada):
-            for arquivo in arquivos:
-                caminho_completo = os.path.join(pasta_atual, arquivo)
-                caminho_relativo = os.path.relpath(caminho_completo, pasta_entrada)
+        for caminho in arquivos:
+            if os.path.isfile(caminho):
+                nome_arquivo = os.path.basename(caminho)
+                zipf.write(caminho, nome_arquivo)
 
-                zipf.write(caminho_completo, caminho_relativo)
-
-                tamanho = os.path.getsize(caminho_completo)
-                modificado = datetime.fromtimestamp(os.path.getmtime(caminho_completo)).strftime('%Y-%m-%d %H:%M:%S')
+                tamanho = os.path.getsize(caminho)
+                modificado = datetime.fromtimestamp(os.path.getmtime(caminho)).strftime('%Y-%m-%d %H:%M:%S')
 
                 registros.append({
-                    "arquivo": caminho_relativo,
+                    "arquivo": nome_arquivo,
                     "tamanho (bytes)": tamanho,
                     "modificado em": modificado
                 })
 
-    # Criar DataFrame e salvar como CSV
+    os.makedirs("logs", exist_ok=True)
     df = pd.DataFrame(registros)
     df.to_csv("logs/relatorio_compactados.csv", index=False)
 
@@ -54,7 +53,7 @@ def descompactar(arquivo_zip, pasta_destino):
                     "extraído em": agora
                 })
 
-    # Criar DataFrame e salvar como CSV
+    os.makedirs("logs", exist_ok=True)
     df = pd.DataFrame(registros)
     df.to_csv("logs/relatorio_descompactados.csv", index=False)
 
@@ -62,7 +61,13 @@ def descompactar(arquivo_zip, pasta_destino):
     console.print(f"[yellow]Relatório salvo em: logs/relatorio_descompactados.csv[/yellow]")
 
 if __name__ == "__main__":
-    console.print("[bold]Compactador de Arquivos[/bold]")
-    # Exemplo de uso:
-    compactar("data/entrada", "data/saida/arquivos.zip")
-    descompactar("data/saida/arquivos.zip", "data/saida/descompactado")
+    console.print("[bold blue]Compactador de Arquivos[/bold blue]")
+
+    arquivos = selecionar_arquivos()
+    arquivo_saida = "data/saida/arquivos.zip"
+
+    if arquivos:
+        compactar_varios(arquivos, arquivo_saida)
+        descompactar(arquivo_saida, "data/saida/descompactado")
+    else:
+        console.print("[red]Nenhum arquivo foi selecionado para compactação.[/red]")
